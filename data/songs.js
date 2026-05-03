@@ -4,63 +4,63 @@ const songs = [
     name: "Blinding Lights",
     artist: "The Weeknd",
     file: "assets/songs/song1.mp3",
-    cover: "assets/covers/default-cover.svg"
+    cover: "assets/covers/cover1.jpg"
   },
   {
     id: 2,
     name: "Boyfriend",
-    artist: "Justin Bieber",
+    artist: "Karan Aujla",
     file: "assets/songs/song2.mp3",
-    cover: "assets/covers/default-cover.svg"
+    cover: "assets/covers/cover2.jpg"
   },
   {
     id: 3,
     name: "Dil Nu",
     artist: "AP Dhillon",
     file: "assets/songs/song3.mp3",
-    cover: "assets/covers/default-cover.svg"
+    cover: "assets/covers/cover3.jpg"
   },
   {
     id: 4,
     name: "Levitating",
     artist: "Dua Lipa",
     file: "assets/songs/song4.mp3",
-    cover: "assets/covers/default-cover.svg"
+    cover: "assets/covers/cover4.jpg"
   },
   {
     id: 5,
     name: "On Top",
     artist: "Karan Aujla",
     file: "assets/songs/song5.mp3",
-    cover: "assets/covers/default-cover.svg"
+    cover: "assets/covers/cover5.jpg"
   },
   {
     id: 6,
     name: "Peaches",
     artist: "Justin Bieber",
     file: "assets/songs/song6.mp3",
-    cover: "assets/covers/default-cover.svg"
+    cover: "assets/covers/cover6.jpg  "
   },
   {
     id: 7,
     name: "Sao Paulo",
     artist: "The Weeknd",
     file: "assets/songs/song7.mp3",
-    cover: "assets/covers/default-cover.svg"
+    cover: "assets/covers/cover7.jpg"
   },
   {
     id: 8,
     name: "Stay",
     artist: "The Kid LAROI & Justin Bieber",
     file: "assets/songs/song8.mp3",
-    cover: "assets/covers/default-cover.svg"
+    cover: "assets/covers/cover8.jpg"
   },
   {
     id: 9,
     name: "We Can't Be Friends",
     artist: "Ariana Grande",
     file: "assets/songs/song9.mp3",
-    cover: "assets/covers/default-cover.svg"
+    cover: "assets/covers/cover9.jpg"
   }
 ];
 
