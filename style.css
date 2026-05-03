@@ -516,6 +516,14 @@ img {
     rgba(255, 255, 255, 0.08);
 }
 
+.track-card.is-unavailable {
+  opacity: 0.62;
+}
+
+.track-card.is-unavailable .card-play {
+  background: rgba(255, 255, 255, 0.18);
+}
+
 .track-art-wrap {
   position: relative;
   overflow: hidden;
