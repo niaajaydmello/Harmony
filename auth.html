@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Harmony - Account</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body class="auth-page">
+    <div class="ambient-grid" aria-hidden="true"></div>
+
+    <main class="auth-shell">
+      <section class="auth-spotlight" aria-label="Harmony">
+        <a class="brand" href="index.html" aria-label="Harmony home">
+          <span class="brand-mark">
+            <img src="assets/icons/music.svg" alt="" />
+          </span>
+          <span>Harmony</span>
+        </a>
+
+        <div class="auth-intro">
+          <p class="eyebrow">Offline music player</p>
+          <h1>Harmony</h1>
+          <p>Your personal listening room, tuned for calm focus and late-night playlists.</p>
+        </div>
+
+        <div class="auth-visual" aria-hidden="true">
+          <img class="auth-cover" src="assets/covers/default-cover.svg" alt="" />
+          <div class="auth-orbit">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <div class="auth-eq">
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="auth-card" aria-labelledby="authTitle">
+        <div class="auth-card-header">
+          <p class="eyebrow" id="authEyebrow">Welcome back</p>
+          <h2 id="authTitle">Log in</h2>
+        </div>
+
+        <div class="auth-tabs" role="tablist" aria-label="Account mode">
+          <button class="auth-tab is-active" id="loginTab" type="button" role="tab" aria-selected="true" data-auth-mode="login">Login</button>
+          <button class="auth-tab" id="signupTab" type="button" role="tab" aria-selected="false" data-auth-mode="signup">Signup</button>
+        </div>
+
+        <div class="auth-form-stage">
+          <form class="auth-form auth-form--login is-active" id="loginForm" novalidate>
+            <label class="auth-field" for="loginEmail">
+              <span>Email</span>
+              <input id="loginEmail" name="email" type="email" placeholder="you@example.com" autocomplete="email" required />
+            </label>
+
+            <label class="auth-field" for="loginPassword">
+              <span>Password</span>
+              <input id="loginPassword" name="password" type="password" placeholder="Enter password" autocomplete="current-password" required />
+            </label>
+
+            <button class="auth-submit" type="submit">Log in</button>
+
+            <p class="auth-switch">
+              New to Harmony?
+              <button type="button" data-switch-auth="signup">Create account</button>
+            </p>
+          </form>
+
+          <form class="auth-form auth-form--signup" id="signupForm" novalidate>
+            <label class="auth-field" for="signupName">
+              <span>Name</span>
+              <input id="signupName" name="name" type="text" placeholder="Your name" autocomplete="name" required />
+            </label>
+
+            <label class="auth-field" for="signupEmail">
+              <span>Email</span>
+              <input id="signupEmail" name="email" type="email" placeholder="you@example.com" autocomplete="email" required />
+            </label>
+
+            <label class="auth-field" for="signupPassword">
+              <span>Password</span>
+              <input id="signupPassword" name="password" type="password" placeholder="6+ characters" autocomplete="new-password" minlength="6" required />
+            </label>
+
+            <button class="auth-submit" type="submit">Create account</button>
+
+            <p class="auth-switch">
+              Already have an account?
+              <button type="button" data-switch-auth="login">Log in</button>
+            </p>
+          </form>
+        </div>
+
+        <p class="auth-status" id="authMessage" role="alert" aria-live="polite"></p>
+      </section>
+    </main>
+
+    <script src="auth.js" defer></script>
+  </body>
+</html>

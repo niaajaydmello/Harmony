@@ -14,14 +14,24 @@
   };
 
   const storageKeys = {
+    currentUser: "harmony:current-user",
     favorites: "harmony:favorites",
     volume: "harmony:volume",
     lastVolume: "harmony:last-volume"
   };
 
+  const currentUser = getCurrentUser();
+
+  if (!currentUser) {
+    redirectToLogin();
+    return;
+  }
+
   const audio = document.getElementById("audio");
   const els = {
     navItems: document.querySelectorAll(".nav-item"),
+    welcomeName: document.getElementById("welcomeName"),
+    logoutBtn: document.getElementById("logoutBtn"),
     likedCount: document.getElementById("likedCount"),
     viewEyebrow: document.getElementById("viewEyebrow"),
     viewTitle: document.getElementById("viewTitle"),
@@ -69,6 +79,9 @@
   let animationFrame = 0;
 
   function init() {
+    syncAccountUi();
+    els.logoutBtn.addEventListener("click", logout);
+
     if (!songs.length) {
       disablePlayer();
       return;
@@ -136,6 +149,17 @@
     });
     audio.addEventListener("ended", playNext);
     audio.addEventListener("error", onAudioError);
+  }
+
+  function syncAccountUi() {
+    const displayName = String(currentUser.name || "Listener").trim() || "Listener";
+    els.welcomeName.textContent = `Welcome, ${displayName}`;
+  }
+
+  function logout() {
+    audio.pause();
+    localStorage.removeItem(storageKeys.currentUser);
+    window.location.href = "auth.html";
   }
 
   function onTrackGridClick(event) {
@@ -539,6 +563,20 @@
   function readStoredVolume() {
     const saved = Number(localStorage.getItem(storageKeys.volume));
     return Number.isFinite(saved) ? saved : 0.72;
+  }
+
+  function getCurrentUser() {
+    try {
+      const user = JSON.parse(localStorage.getItem(storageKeys.currentUser) || "null");
+      return user && user.email ? user : null;
+    } catch {
+      localStorage.removeItem(storageKeys.currentUser);
+      return null;
+    }
+  }
+
+  function redirectToLogin() {
+    window.location.replace("auth.html");
   }
 
   function loadFavorites() {

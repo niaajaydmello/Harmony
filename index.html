@@ -4,6 +4,19 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Harmony - Offline Music Player</title>
+    <script>
+      (() => {
+        try {
+          const user = JSON.parse(localStorage.getItem("harmony:current-user") || "null");
+          if (!user || !user.email) {
+            window.location.replace("auth.html");
+          }
+        } catch (error) {
+          localStorage.removeItem("harmony:current-user");
+          window.location.replace("auth.html");
+        }
+      })();
+    </script>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
@@ -56,6 +69,11 @@
               <img src="assets/icons/close.svg" alt="" />
             </button>
           </label>
+
+          <div class="user-menu" aria-label="Account">
+            <span class="welcome-copy" id="welcomeName">Welcome</span>
+            <button class="logout-button" id="logoutBtn" type="button">Logout</button>
+          </div>
         </header>
 
         <section class="hero-panel" aria-labelledby="heroTitle">
