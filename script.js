@@ -17,7 +17,8 @@
     currentUser: "harmony:current-user",
     favorites: "harmony:favorites",
     volume: "harmony:volume",
-    lastVolume: "harmony:last-volume"
+    lastVolume: "harmony:last-volume",
+    playlists: "harmony:playlists"
   };
 
   const currentUser = getCurrentUser();
@@ -63,7 +64,21 @@
     durationTime: document.getElementById("durationTime"),
     volumeRange: document.getElementById("volumeRange"),
     muteBtn: document.getElementById("muteBtn"),
-    volumeIcon: document.getElementById("volumeIcon")
+    volumeIcon: document.getElementById("volumeIcon"),
+    // Playlist elements
+    createPlaylistBtn: document.getElementById("createPlaylistBtn"),
+    playlistsList: document.getElementById("playlistsList"),
+    createPlaylistModal: document.getElementById("createPlaylistModal"),
+    playlistNameInput: document.getElementById("playlistNameInput"),
+    playlistNameError: document.getElementById("playlistNameError"),
+    confirmPlaylistBtn: document.getElementById("confirmPlaylistBtn"),
+    cancelPlaylistBtn: document.getElementById("cancelPlaylistBtn"),
+    addSongsModal: document.getElementById("addSongsModal"),
+    addSongsSearch: document.getElementById("addSongsSearch"),
+    addSongsList: document.getElementById("addSongsList"),
+    addSongsEmpty: document.getElementById("addSongsEmpty"),
+    closeAddSongsBtn: document.getElementById("closeAddSongsBtn"),
+    addSongsTitle: document.getElementById("addSongsTitle")
   };
 
   const state = {
@@ -73,7 +88,10 @@
     isPlaying: false,
     requestedPlayback: false,
     favorites: loadFavorites(),
-    unavailableIds: new Set()
+    unavailableIds: new Set(),
+    playlists: loadPlaylists(),
+    activePlaylistId: null,
+    addSongsPlaylistId: null
   };
 
   let animationFrame = 0;
@@ -89,6 +107,7 @@
 
     keepOnlyValidFavorites();
     bindEvents();
+    initializePlaylists();
     setVolume(readStoredVolume());
     loadSong(0, false);
     renderView();
@@ -170,6 +189,14 @@
       return;
     }
 
+    const removeButton = event.target.closest(".remove-from-playlist-btn");
+    if (removeButton) {
+      event.stopPropagation();
+      const songId = Number(removeButton.dataset.songId);
+      removeSongFromPlaylist(state.activePlaylistId, songId);
+      return;
+    }
+
     const card = event.target.closest("[data-song-id]");
     if (!card) return;
     playSongById(Number(card.dataset.songId));
@@ -195,74 +222,6 @@
     }
 
     loadSong(index, true);
-  }
-
-  function renderView() {
-    const isLibrary = state.activeView === "library";
-
-    els.navItems.forEach((item) => {
-      item.classList.toggle("is-active", item.dataset.view === state.activeView);
-    });
-
-    els.viewEyebrow.textContent = isLibrary ? "Library" : greeting();
-    els.viewTitle.textContent = isLibrary ? "Liked Songs" : "Today's Mix";
-    els.trackContext.textContent = isLibrary ? "Your Favorites" : "All Tracks";
-    els.tracksHeading.textContent = isLibrary ? "Saved Collection" : "Featured Songs";
-
-    renderSongs();
-    updateFavoriteCount();
-  }
-
-  function renderSongs() {
-    const visibleSongs = getVisibleSongs();
-    els.resultCount.textContent = `${visibleSongs.length} ${visibleSongs.length === 1 ? "song" : "songs"}`;
-    els.clearSearch.classList.toggle("is-visible", state.query.length > 0);
-    els.emptyState.hidden = visibleSongs.length > 0;
-    els.trackGrid.hidden = visibleSongs.length === 0;
-    els.trackGrid.innerHTML = visibleSongs.map(renderSongCard).join("");
-  }
-
-  function renderSongCard(song) {
-    const active = song.id === currentSong().id;
-    const liked = state.favorites.has(song.id);
-    const unavailable = state.unavailableIds.has(song.id);
-    const safeName = escapeHtml(song.name);
-    const safeArtist = escapeHtml(song.artist);
-    const playIcon = active && state.isPlaying ? icons.pause : icons.play;
-
-    return `
-      <article class="track-card ${active ? "is-active" : ""} ${unavailable ? "is-unavailable" : ""}" data-song-id="${song.id}" tabindex="0" aria-label="${safeName} by ${safeArtist}">
-        <div class="track-art-wrap">
-          <img class="track-art" src="${coverFor(song)}" alt="${safeName} cover" loading="lazy" />
-          <span class="playing-indicator" aria-hidden="true">
-            <span></span><span></span><span></span>
-          </span>
-          <button class="card-play" type="button" aria-label="Play ${safeName}">
-            <img src="${playIcon}" alt="" />
-          </button>
-        </div>
-        <div class="track-info">
-          <div>
-            <h3>${safeName}</h3>
-            <p>${safeArtist}</p>
-          </div>
-          <button class="icon-button card-like ${liked ? "is-liked" : ""}" type="button" data-like-id="${song.id}" aria-label="${liked ? "Unlike" : "Like"} ${safeName}">
-            <img src="${liked ? icons.heartFilled : icons.heart}" alt="" />
-          </button>
-        </div>
-      </article>
-    `;
-  }
-
-  function getVisibleSongs() {
-    const collection = state.activeView === "library"
-      ? songs.filter((song) => state.favorites.has(song.id))
-      : songs;
-
-    if (!state.query) return collection;
-    return collection.filter((song) => {
-      return `${song.name} ${song.artist}`.toLowerCase().includes(state.query);
-    });
   }
 
   function loadSong(index, shouldPlay) {
@@ -645,6 +604,368 @@
       .replaceAll(">", "&gt;")
       .replaceAll('"', "&quot;")
       .replaceAll("'", "&#039;");
+  }
+
+  // Playlist Functions
+  function initializePlaylists() {
+    renderPlaylistsList();
+    bindPlaylistEvents();
+  }
+
+  function bindPlaylistEvents() {
+    els.createPlaylistBtn.addEventListener("click", openCreatePlaylistModal);
+    els.confirmPlaylistBtn.addEventListener("click", createPlaylist);
+    els.cancelPlaylistBtn.addEventListener("click", closeCreatePlaylistModal);
+    els.closeAddSongsBtn.addEventListener("click", closeAddSongsModal);
+
+    // Modal close buttons
+    document.querySelectorAll(".modal-close").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        const modal = e.target.closest(".modal-overlay");
+        if (modal) modal.hidden = true;
+      });
+    });
+
+    // Modal overlay click to close
+    document.querySelectorAll(".modal-overlay").forEach((modal) => {
+      modal.addEventListener("click", (e) => {
+        if (e.target === modal) modal.hidden = true;
+      });
+    });
+
+    // Playlist name input - allow Enter key to create
+    els.playlistNameInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        createPlaylist();
+      }
+    });
+
+    // Add songs search
+    els.addSongsSearch.addEventListener("input", (e) => {
+      renderAvailableSongsForPlaylist(e.target.value.toLowerCase());
+    });
+  }
+
+  function openCreatePlaylistModal() {
+    els.playlistNameInput.value = "";
+    els.playlistNameError.hidden = true;
+    els.createPlaylistModal.hidden = false;
+    els.playlistNameInput.focus();
+  }
+
+  function closeCreatePlaylistModal() {
+    els.createPlaylistModal.hidden = true;
+  }
+
+  function createPlaylist() {
+    const name = els.playlistNameInput.value.trim();
+
+    if (!name) {
+      els.playlistNameError.textContent = "Playlist name cannot be empty";
+      els.playlistNameError.hidden = false;
+      return;
+    }
+
+    if (name.length > 50) {
+      els.playlistNameError.textContent = "Playlist name must be 50 characters or less";
+      els.playlistNameError.hidden = false;
+      return;
+    }
+
+    const playlistId = Date.now();
+    const playlist = {
+      id: playlistId,
+      name: name,
+      songs: [],
+      createdAt: new Date().toISOString()
+    };
+
+    state.playlists.push(playlist);
+    savePlaylists();
+    renderPlaylistsList();
+    closeCreatePlaylistModal();
+  }
+
+  function deletePlaylist(playlistId) {
+    if (!confirm("Are you sure you want to delete this playlist?")) return;
+
+    state.playlists = state.playlists.filter((p) => p.id !== playlistId);
+    if (state.activePlaylistId === playlistId) {
+      state.activePlaylistId = null;
+      state.activeView = "home";
+      state.query = "";
+      els.searchInput.value = "";
+      renderView();
+    }
+    savePlaylists();
+    renderPlaylistsList();
+  }
+
+  function openAddSongsModal(playlistId) {
+    state.addSongsPlaylistId = playlistId;
+    const playlist = state.playlists.find((p) => p.id === playlistId);
+    if (!playlist) return;
+
+    els.addSongsTitle.textContent = `Add Songs to "${escapeHtml(playlist.name)}"`;
+    els.addSongsSearch.value = "";
+    els.addSongsModal.hidden = false;
+    renderAvailableSongsForPlaylist("");
+  }
+
+  function closeAddSongsModal() {
+    els.addSongsModal.hidden = true;
+    state.addSongsPlaylistId = null;
+  }
+
+  function renderAvailableSongsForPlaylist(query) {
+    const playlistId = state.addSongsPlaylistId;
+    const playlist = state.playlists.find((p) => p.id === playlistId);
+    if (!playlist) return;
+
+    const playlistSongIds = new Set(playlist.songs.map((s) => s.id));
+    let availableSongs = songs.filter((song) => !playlistSongIds.has(song.id));
+
+    if (query) {
+      availableSongs = availableSongs.filter((song) =>
+        `${song.name} ${song.artist}`.toLowerCase().includes(query)
+      );
+    }
+
+    els.addSongsEmpty.hidden = availableSongs.length > 0;
+    els.addSongsList.hidden = availableSongs.length === 0;
+
+    els.addSongsList.innerHTML = availableSongs
+      .map((song) => `
+        <div class="song-item">
+          <img src="${coverFor(song)}" alt="${escapeHtml(song.name)} cover" />
+          <div class="song-info">
+            <p class="song-info-title">${escapeHtml(song.name)}</p>
+            <p class="song-info-artist">${escapeHtml(song.artist)}</p>
+          </div>
+          <button class="add-song-btn" data-song-id="${song.id}" type="button" aria-label="Add ${escapeHtml(song.name)} to playlist">
+            <img src="assets/icons/add.svg" alt="" />
+          </button>
+        </div>
+      `)
+      .join("");
+
+    // Bind add song buttons
+    els.addSongsList.querySelectorAll(".add-song-btn").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        const songId = Number(e.currentTarget.dataset.songId);
+        addSongToPlaylist(playlistId, songId);
+      });
+    });
+  }
+
+  function addSongToPlaylist(playlistId, songId) {
+    const playlist = state.playlists.find((p) => p.id === playlistId);
+    const song = songs.find((s) => s.id === songId);
+
+    if (!playlist || !song) return;
+
+    // Check if song already exists in playlist
+    if (playlist.songs.find((s) => s.id === songId)) return;
+
+    playlist.songs.push(song);
+    savePlaylists();
+    renderAvailableSongsForPlaylist(els.addSongsSearch.value.toLowerCase());
+  }
+
+  function removeSongFromPlaylist(playlistId, songId) {
+    const playlist = state.playlists.find((p) => p.id === playlistId);
+    if (!playlist) return;
+
+    playlist.songs = playlist.songs.filter((s) => s.id !== songId);
+    savePlaylists();
+
+    if (state.activePlaylistId === playlistId) {
+      renderSongs();
+    }
+  }
+
+  function selectPlaylist(playlistId) {
+    state.activePlaylistId = playlistId;
+    state.activeView = "playlist";
+    state.query = "";
+    els.searchInput.value = "";
+    renderView();
+    renderPlaylistsList();
+  }
+
+  function renderPlaylistsList() {
+    els.playlistsList.innerHTML = state.playlists
+      .map((playlist) => `
+        <li class="playlist-item ${state.activePlaylistId === playlist.id ? "is-active" : ""}" data-playlist-id="${playlist.id}">
+          <span class="playlist-name">${escapeHtml(playlist.name)}</span>
+          <div class="playlist-actions">
+            <button class="playlist-action-btn add-songs-btn" type="button" aria-label="Add songs to playlist" title="Add songs">
+              <img src="assets/icons/add.svg" alt="" />
+            </button>
+            <button class="playlist-action-btn delete-playlist-btn" type="button" aria-label="Delete playlist" title="Delete">
+              <img src="assets/icons/close.svg" alt="" />
+            </button>
+          </div>
+        </li>
+      `)
+      .join("");
+
+    // Bind playlist item click
+    els.playlistsList.querySelectorAll(".playlist-item").forEach((item) => {
+      item.addEventListener("click", (e) => {
+        if (!e.target.closest("button")) {
+          selectPlaylist(Number(item.dataset.playlistId));
+        }
+      });
+    });
+
+    // Bind add songs buttons
+    els.playlistsList.querySelectorAll(".add-songs-btn").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const playlistId = Number(e.closest(".playlist-item").dataset.playlistId);
+        openAddSongsModal(playlistId);
+      });
+    });
+
+    // Bind delete buttons
+    els.playlistsList.querySelectorAll(".delete-playlist-btn").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const playlistId = Number(e.closest(".playlist-item").dataset.playlistId);
+        deletePlaylist(playlistId);
+      });
+    });
+  }
+
+  function getVisibleSongs() {
+    let collection;
+
+    if (state.activeView === "playlist") {
+      const playlist = state.playlists.find((p) => p.id === state.activePlaylistId);
+      collection = playlist ? playlist.songs : [];
+    } else if (state.activeView === "library") {
+      collection = songs.filter((song) => state.favorites.has(song.id));
+    } else {
+      collection = songs;
+    }
+
+    if (!state.query) return collection;
+    return collection.filter((song) => {
+      return `${song.name} ${song.artist}`.toLowerCase().includes(state.query);
+    });
+  }
+
+  function renderView() {
+    const isLibrary = state.activeView === "library";
+    const isPlaylist = state.activeView === "playlist";
+    const currentPlaylist = state.playlists.find((p) => p.id === state.activePlaylistId);
+
+    els.navItems.forEach((item) => {
+      item.classList.remove("is-active");
+    });
+
+    if (isPlaylist) {
+      els.viewEyebrow.textContent = "Playlist";
+      els.viewTitle.textContent = currentPlaylist?.name || "Playlist";
+      els.trackContext.textContent = "Playlist Songs";
+      els.tracksHeading.textContent = `${currentPlaylist?.songs.length || 0} song${currentPlaylist?.songs.length !== 1 ? "s" : ""}`;
+    } else if (isLibrary) {
+      els.navItems.forEach((item) => {
+        if (item.dataset.view === "library") item.classList.add("is-active");
+      });
+      els.viewEyebrow.textContent = "Library";
+      els.viewTitle.textContent = "Liked Songs";
+      els.trackContext.textContent = "Your Favorites";
+      els.tracksHeading.textContent = "Saved Collection";
+    } else {
+      els.navItems.forEach((item) => {
+        if (item.dataset.view === "home") item.classList.add("is-active");
+      });
+      els.viewEyebrow.textContent = greeting();
+      els.viewTitle.textContent = "Today's Mix";
+      els.trackContext.textContent = "All Tracks";
+      els.tracksHeading.textContent = "Featured Songs";
+    }
+
+    renderSongs();
+    updateFavoriteCount();
+  }
+
+  function renderSongCard(song) {
+    const active = song.id === currentSong().id;
+    const liked = state.favorites.has(song.id);
+    const unavailable = state.unavailableIds.has(song.id);
+    const safeName = escapeHtml(song.name);
+    const safeArtist = escapeHtml(song.artist);
+    const playIcon = active && state.isPlaying ? icons.pause : icons.play;
+
+    let removeButton = "";
+    if (state.activeView === "playlist") {
+      removeButton = `
+        <button class="icon-button remove-from-playlist-btn" type="button" data-song-id="${song.id}" aria-label="Remove ${safeName} from playlist">
+          <img src="assets/icons/close.svg" alt="" />
+        </button>
+      `;
+    }
+
+    return `
+      <article class="track-card ${active ? "is-active" : ""} ${unavailable ? "is-unavailable" : ""}" data-song-id="${song.id}" tabindex="0" aria-label="${safeName} by ${safeArtist}">
+        <div class="track-art-wrap">
+          <img class="track-art" src="${coverFor(song)}" alt="${safeName} cover" loading="lazy" />
+          <span class="playing-indicator" aria-hidden="true">
+            <span></span><span></span><span></span>
+          </span>
+          <button class="card-play" type="button" aria-label="Play ${safeName}">
+            <img src="${playIcon}" alt="" />
+          </button>
+        </div>
+        <div class="track-info">
+          <div>
+            <h3>${safeName}</h3>
+            <p>${safeArtist}</p>
+          </div>
+          <div class="track-card-actions">
+            ${removeButton}
+            <button class="icon-button card-like ${liked ? "is-liked" : ""}" type="button" data-like-id="${song.id}" aria-label="${liked ? "Unlike" : "Like"} ${safeName}">
+              <img src="${liked ? icons.heartFilled : icons.heart}" alt="" />
+            </button>
+          </div>
+        </div>
+      </article>
+    `;
+  }
+
+  function renderSongs() {
+    const visibleSongs = getVisibleSongs();
+    els.resultCount.textContent = `${visibleSongs.length} ${visibleSongs.length === 1 ? "song" : "songs"}`;
+    els.clearSearch.classList.toggle("is-visible", state.query.length > 0);
+    els.emptyState.hidden = visibleSongs.length > 0;
+    els.trackGrid.hidden = visibleSongs.length === 0;
+    els.trackGrid.innerHTML = visibleSongs.map(renderSongCard).join("");
+
+    // Bind remove from playlist buttons
+    els.trackGrid.querySelectorAll(".remove-from-playlist-btn").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const songId = Number(btn.dataset.songId);
+        removeSongFromPlaylist(state.activePlaylistId, songId);
+      });
+    });
+  }
+
+  function loadPlaylists() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(storageKeys.playlists) || "[]");
+      return Array.isArray(saved) ? saved : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function savePlaylists() {
+    localStorage.setItem(storageKeys.playlists, JSON.stringify(state.playlists));
   }
 
   init();

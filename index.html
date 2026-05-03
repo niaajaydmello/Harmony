@@ -43,6 +43,16 @@
           </button>
         </nav>
 
+        <div class="playlists-section">
+          <div class="playlists-header">
+            <h3 class="playlists-title">Playlists</h3>
+            <button class="create-playlist-btn" id="createPlaylistBtn" type="button" aria-label="Create new playlist" title="Create new playlist">
+              <img src="assets/icons/add.svg" alt="" />
+            </button>
+          </div>
+          <ul class="playlists-list" id="playlistsList" aria-label="Your playlists"></ul>
+        </div>
+
         <div class="sidebar-panel">
           <p class="panel-kicker">Offline</p>
           <p class="panel-title">9-track collection</p>
@@ -160,6 +170,53 @@
         <input class="range volume-range" id="volumeRange" type="range" min="0" max="1" step="0.01" value="0.72" aria-label="Volume" />
       </div>
     </footer>
+
+    <!-- Create Playlist Modal -->
+    <div class="modal-overlay" id="createPlaylistModal" hidden>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Create New Playlist</h2>
+          <button class="modal-close" type="button" aria-label="Close modal">
+            <img src="assets/icons/close.svg" alt="" />
+          </button>
+        </div>
+        <div class="modal-body">
+          <label for="playlistNameInput" class="input-label">Playlist Name</label>
+          <input id="playlistNameInput" type="text" placeholder="My Awesome Playlist" maxlength="50" />
+          <div class="input-error" id="playlistNameError" hidden></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" id="cancelPlaylistBtn" type="button">Cancel</button>
+          <button class="btn-primary" id="confirmPlaylistBtn" type="button">Create</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add Songs to Playlist Modal -->
+    <div class="modal-overlay" id="addSongsModal" hidden>
+      <div class="modal-content modal-lg">
+        <div class="modal-header">
+          <h2 id="addSongsTitle">Add Songs to Playlist</h2>
+          <button class="modal-close" type="button" aria-label="Close modal">
+            <img src="assets/icons/close.svg" alt="" />
+          </button>
+        </div>
+        <div class="modal-body modal-search">
+          <label class="search-box-modal" for="addSongsSearch">
+            <img src="assets/icons/search.svg" alt="" />
+            <input id="addSongsSearch" type="search" placeholder="Search songs..." autocomplete="off" />
+          </label>
+          <div class="songs-list" id="addSongsList"></div>
+          <div class="empty-state-modal" id="addSongsEmpty" hidden>
+            <img src="assets/icons/search.svg" alt="" />
+            <h3>No songs found</h3>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" id="closeAddSongsBtn" type="button">Done</button>
+        </div>
+      </div>
+    </div>
 
     <audio id="audio" preload="metadata"></audio>
     <script src="data/songs.js" defer></script>
